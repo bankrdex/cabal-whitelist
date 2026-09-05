@@ -8,6 +8,8 @@ export const SITE = {
   profileUrl: "https://x.com/Basecable",
   followUrl: "https://x.com/intent/follow?screen_name=Basecable",
   notifyUrl: "https://x.com/Basecable",
+  telegramUrl: "https://t.me/basecabaI",
+  telegramHandle: "basecabaI",
 } as const;
 
 export const POSTS = [
@@ -45,6 +47,7 @@ export const WALLET_RE = /^0x[a-fA-F0-9]{40}$/;
 
 export type TaskId =
   | "follow"
+  | "telegram"
   | "like"
   | "repost"
   | "notify"
@@ -55,6 +58,7 @@ export type TaskId =
 
 export const TASK_ORDER: TaskId[] = [
   "follow",
+  "telegram",
   "like",
   "repost",
   "notify",
@@ -68,6 +72,7 @@ export type TaskState = Record<TaskId, boolean>;
 
 export const EMPTY_TASKS: TaskState = {
   follow: false,
+  telegram: false,
   like: false,
   repost: false,
   notify: false,

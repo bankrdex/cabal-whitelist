@@ -37,6 +37,17 @@ function XMark({ className }: { className?: string }) {
   );
 }
 
+function TelegramMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"
+      />
+    </svg>
+  );
+}
+
 function loadTasks(): TaskState {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.tasks);
@@ -170,7 +181,7 @@ export function WhitelistApp() {
             CABAL WHITELIST
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            {SITE.bio}. Follow, like, repost, reply, and turn on notifications — then submit your Base wallet.
+            {SITE.bio}. Follow, join Telegram, like, repost, reply, and turn on notifications — then submit your Base wallet.
           </p>
           <p className="mt-3 font-mono text-xs tabular-nums text-muted">
             {completedCount}/{TASK_ORDER.length} tasks complete
@@ -203,6 +214,26 @@ export function WhitelistApp() {
 
             <StepCard
               index={2}
+              delay="110ms"
+              done={tasks.telegram}
+              title="Join the Telegram"
+              body="Join the official BASECABAL channel for drops and updates."
+            >
+              <Button asChild variant={tasks.telegram ? "outline" : "primary"} size="full">
+                <a
+                  href={SITE.telegramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => complete("telegram")}
+                >
+                  {tasks.telegram ? <Check /> : <TelegramMark className="size-4" />}
+                  {tasks.telegram ? "Joined Telegram" : "Join t.me/basecabaI"}
+                </a>
+              </Button>
+            </StepCard>
+
+            <StepCard
+              index={3}
               delay="140ms"
               done={post1Done}
               title="Like, RT, reply & turn on notifications"
@@ -249,7 +280,7 @@ export function WhitelistApp() {
             </StepCard>
 
             <StepCard
-              index={3}
+              index={4}
               delay="180ms"
               done={post2Done}
               title="Like, RT & reply to the whitelist post"
@@ -285,7 +316,7 @@ export function WhitelistApp() {
             </StepCard>
 
             <StepCard
-              index={4}
+              index={5}
               delay="220ms"
               done={Boolean(submitted)}
               locked={!unlocked}
@@ -315,7 +346,7 @@ export function WhitelistApp() {
                     <div className="absolute inset-0 flex items-center justify-center rounded-md bg-surface/80">
                       <span className="inline-flex items-center gap-1.5 px-2 text-center text-xs font-medium text-fg">
                         <Lock className="size-3.5 shrink-0" />
-                        Locked — complete tasks 1–3
+                        Locked — complete tasks 1–4
                       </span>
                     </div>
                   )}
