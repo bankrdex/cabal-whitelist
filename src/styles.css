@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #05060a;
+  --color-surface: #0e121c;
+  --color-surface-2: #161c28;
+  --color-fg: #eef3f8;
+  --color-muted: #8b93a7;
+  --color-primary: #3ddcff;
+  --color-primary-fg: #041018;
+  --color-accent: #0052ff;
+  --color-border: #243044;
+  --color-success: #5cffc4;
+  --color-danger: #ff5c7a;
+  --color-moon: #f0a020;
+
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Pixelify Sans", "Outfit", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2rem;
+
+  --shadow-border: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-border-hover: 0 0 0 1px rgb(255 255 255 / 0.14);
+  --shadow-primary: 0 0 0 1px rgb(61 220 255 / 0.35), 0 8px 28px rgb(61 220 255 / 0.12);
+  --shadow-input: 0 0 0 1px color-mix(in oklab, var(--color-fg) 20%, transparent);
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    body.custom-cursor {
+      cursor: none;
+    }
+    body.custom-cursor a,
+    body.custom-cursor button,
+    body.custom-cursor [role="button"] {
+      cursor: none;
+    }
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(61 220 255 / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgb(61 220 255 / 0);
+  }
+}
+
+.stagger-in {
+  animation: fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in {
+    animation: none;
+  }
+}
