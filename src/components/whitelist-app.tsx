@@ -21,9 +21,6 @@ import {
   STORAGE_KEYS,
   TASK_ORDER,
   WALLET_RE,
-  assignReply,
-  loadAssignedReplies,
-  replyIntentUrl,
   type TaskId,
   type TaskState,
 } from "@/lib/config";
@@ -60,7 +57,6 @@ export function WhitelistApp() {
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [replies, setReplies] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setTasks(loadTasks());
@@ -70,11 +66,6 @@ export function WhitelistApp() {
     } catch {
       /* ignore */
     }
-    let assigned = loadAssignedReplies();
-    for (const post of POSTS) {
-      assigned = assignReply(post.id, assigned).next;
-    }
-    setReplies(assigned);
   }, []);
 
   const completedCount = TASK_ORDER.filter((id) => tasks[id]).length;
@@ -218,7 +209,7 @@ export function WhitelistApp() {
               body="Engage with this post on X, then tap the bell on the profile."
             >
               <TweetPreview excerpt={post1.excerpt} image={post1.image} imageAlt={post1.imageAlt} />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <TaskAction
                   done={tasks.like}
                   label="Like"
@@ -243,15 +234,17 @@ export function WhitelistApp() {
                   href={SITE.notifyUrl}
                   onComplete={() => complete("notify")}
                 />
+                <TaskAction
+                  done={tasks.reply}
+                  label="Reply"
+                  doneLabel="Replied"
+                  icon={MessageCircle}
+                  href={post1.replyUrl}
+                  onComplete={() => complete("reply")}
+                />
               </div>
-              <ReplyAction
-                done={tasks.reply}
-                text={replies[post1.id]}
-                href={replies[post1.id] ? replyIntentUrl(post1.tweetId, replies[post1.id]) : post1.url}
-                onComplete={() => complete("reply")}
-              />
               <p className="text-xs text-muted">
-                Notifications: open the profile and tap the bell icon. Your reply is unique to you.
+                Notifications: open the profile and tap the bell icon. Reply in your own words.
               </p>
             </StepCard>
 
@@ -263,7 +256,7 @@ export function WhitelistApp() {
               body="Engage with the latest @Basecable post to stay eligible."
             >
               <TweetPreview excerpt={post2.excerpt} image={post2.image} imageAlt={post2.imageAlt} />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <TaskAction
                   done={tasks.likeOpen}
                   label="Like"
@@ -280,13 +273,15 @@ export function WhitelistApp() {
                   href={post2.repostUrl}
                   onComplete={() => complete("repostOpen")}
                 />
+                <TaskAction
+                  done={tasks.replyOpen}
+                  label="Reply"
+                  doneLabel="Replied"
+                  icon={MessageCircle}
+                  href={post2.replyUrl}
+                  onComplete={() => complete("replyOpen")}
+                />
               </div>
-              <ReplyAction
-                done={tasks.replyOpen}
-                text={replies[post2.id]}
-                href={replies[post2.id] ? replyIntentUrl(post2.tweetId, replies[post2.id]) : post2.url}
-                onComplete={() => complete("replyOpen")}
-              />
             </StepCard>
 
             <StepCard
@@ -454,31 +449,6 @@ function TaskAction({
         {done ? doneLabel : label}
       </a>
     </Button>
-  );
-}
-
-function ReplyAction({
-  done,
-  text,
-  href,
-  onComplete,
-}: {
-  done: boolean;
-  text?: string;
-  href: string;
-  onComplete: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 rounded-lg bg-bg px-3 py-3 shadow-[var(--shadow-border)]">
-      <p className="text-xs font-medium tracking-wide text-muted">Your reply</p>
-      <p className="font-mono text-sm text-fg">{text || "lfg"}</p>
-      <Button asChild variant={done ? "outline" : "primary"} size="full">
-        <a href={href} target="_blank" rel="noreferrer" onClick={onComplete}>
-          {done ? <Check /> : <MessageCircle />}
-          {done ? "Replied" : "Reply with this"}
-        </a>
-      </Button>
-    </div>
   );
 }
 
