@@ -122,7 +122,7 @@ export function WhitelistApp() {
   const post1 = POSTS[0];
   const post2 = POSTS[1];
   const post1Done = tasks.like && tasks.repost && tasks.notify;
-  const post2Done = tasks.like2 && tasks.repost2;
+  const post2Done = tasks.likeOpen && tasks.repostOpen;
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -249,20 +249,20 @@ export function WhitelistApp() {
               <TweetPreview excerpt={post2.excerpt} image={post2.image} imageAlt={post2.imageAlt} />
               <div className="grid grid-cols-2 gap-2">
                 <TaskAction
-                  done={tasks.like2}
+                  done={tasks.likeOpen}
                   label="Like"
                   doneLabel="Liked"
                   icon={Heart}
                   href={post2.likeUrl}
-                  onComplete={() => complete("like2")}
+                  onComplete={() => complete("likeOpen")}
                 />
                 <TaskAction
-                  done={tasks.repost2}
+                  done={tasks.repostOpen}
                   label="Repost"
                   doneLabel="Reposted"
                   icon={Repeat2}
                   href={post2.repostUrl}
-                  onComplete={() => complete("repost2")}
+                  onComplete={() => complete("repostOpen")}
                 />
               </div>
             </StepCard>

@@ -25,16 +25,16 @@ export const POSTS = [
   },
   {
     id: "open",
-    tweetId: "2096254782075978229",
-    url: "https://x.com/Basecable/status/2096254782075978229",
-    likeUrl: "https://x.com/intent/like?tweet_id=2096254782075978229",
-    repostUrl: "https://x.com/intent/retweet?tweet_id=2096254782075978229",
+    tweetId: "2096261402726211734",
+    url: "https://x.com/Basecable/status/2096261402726211734",
+    likeUrl: "https://x.com/intent/like?tweet_id=2096261402726211734",
+    repostUrl: "https://x.com/intent/retweet?tweet_id=2096261402726211734",
     excerpt:
-      "The whitelist is now open. If you didn’t receive the $CABAL airdrop, you have one last chance. Like, RT & turn on notis.",
+      "The whitelist is now open. If you are not eligible for the $CABAL airdrop, you have one last chance. Like, RT & turn on notis.",
     image: "/whitelist-open.jpg",
     imageAlt: "Whitelist now open",
-    likeTask: "like2" as const,
-    repostTask: "repost2" as const,
+    likeTask: "likeOpen" as const,
+    repostTask: "repostOpen" as const,
   },
 ] as const;
 
@@ -45,15 +45,15 @@ export const STORAGE_KEYS = {
 
 export const WALLET_RE = /^0x[a-fA-F0-9]{40}$/;
 
-export type TaskId = "follow" | "like" | "repost" | "notify" | "like2" | "repost2";
+export type TaskId = "follow" | "like" | "repost" | "notify" | "likeOpen" | "repostOpen";
 
 export const TASK_ORDER: TaskId[] = [
   "follow",
   "like",
   "repost",
   "notify",
-  "like2",
-  "repost2",
+  "likeOpen",
+  "repostOpen",
 ];
 
 export type TaskState = Record<TaskId, boolean>;
@@ -63,6 +63,6 @@ export const EMPTY_TASKS: TaskState = {
   like: false,
   repost: false,
   notify: false,
-  like2: false,
-  repost2: false,
+  likeOpen: false,
+  repostOpen: false,
 };
