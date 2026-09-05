@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { CustomCursor } from "@/components/cursor";
 import {
   EMPTY_TASKS,
+  POSTS,
   SITE,
   STORAGE_KEYS,
   TASK_ORDER,
@@ -118,6 +119,11 @@ export function WhitelistApp() {
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
 
+  const post1 = POSTS[0];
+  const post2 = POSTS[1];
+  const post1Done = tasks.like && tasks.repost && tasks.notify;
+  const post2Done = tasks.like2 && tasks.repost2;
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <CustomCursor />
@@ -163,7 +169,7 @@ export function WhitelistApp() {
             CABAL WHITELIST
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            {SITE.bio}. Follow, like, repost, and turn on notifications — then submit your Base wallet.
+            {SITE.bio}. Follow, like & repost both posts, and turn on notifications — then submit your Base wallet.
           </p>
           <p className="mt-3 font-mono text-xs tabular-nums text-muted">
             {completedCount}/{TASK_ORDER.length} tasks complete
@@ -197,37 +203,18 @@ export function WhitelistApp() {
             <StepCard
               index={2}
               delay="140ms"
-              done={tasks.like && tasks.repost && tasks.notify}
-              title={`Like, RT & turn on notifications`}
+              done={post1Done}
+              title="Like, RT & turn on notifications"
               body="Engage with this post on X, then tap the bell on the profile."
             >
-              <article className="overflow-hidden rounded-lg bg-bg shadow-[var(--shadow-border)]">
-                <div className="flex items-center gap-2.5 px-3 pt-3">
-                  <img
-                    src="/cabal-avatar.jpg"
-                    alt=""
-                    className="size-8 rounded-md outline outline-1 -outline-offset-1 outline-fg/15"
-                  />
-                  <div className="min-w-0 leading-tight">
-                    <p className="truncate text-sm font-medium text-fg">{SITE.displayName}</p>
-                    <p className="text-xs text-muted">@{SITE.handle}</p>
-                  </div>
-                </div>
-                <p className="px-3 pt-2 pb-2 text-sm leading-relaxed text-fg/90">{SITE.tweetExcerpt}</p>
-                <img
-                  src="/check-wallets.jpg"
-                  alt="Check wallets"
-                  className="aspect-[2/1] w-full object-cover outline outline-1 -outline-offset-1 outline-fg/10"
-                />
-              </article>
-
+              <TweetPreview excerpt={post1.excerpt} image={post1.image} imageAlt={post1.imageAlt} />
               <div className="grid grid-cols-3 gap-2">
                 <TaskAction
                   done={tasks.like}
                   label="Like"
                   doneLabel="Liked"
                   icon={Heart}
-                  href={SITE.likeUrl}
+                  href={post1.likeUrl}
                   onComplete={() => complete("like")}
                 />
                 <TaskAction
@@ -235,7 +222,7 @@ export function WhitelistApp() {
                   label="Repost"
                   doneLabel="Reposted"
                   icon={Repeat2}
-                  href={SITE.repostUrl}
+                  href={post1.repostUrl}
                   onComplete={() => complete("repost")}
                 />
                 <TaskAction
@@ -254,7 +241,35 @@ export function WhitelistApp() {
 
             <StepCard
               index={3}
-              delay="200ms"
+              delay="180ms"
+              done={post2Done}
+              title="Like & RT the whitelist post"
+              body="Engage with the latest @Basecable post to stay eligible."
+            >
+              <TweetPreview excerpt={post2.excerpt} image={post2.image} imageAlt={post2.imageAlt} />
+              <div className="grid grid-cols-2 gap-2">
+                <TaskAction
+                  done={tasks.like2}
+                  label="Like"
+                  doneLabel="Liked"
+                  icon={Heart}
+                  href={post2.likeUrl}
+                  onComplete={() => complete("like2")}
+                />
+                <TaskAction
+                  done={tasks.repost2}
+                  label="Repost"
+                  doneLabel="Reposted"
+                  icon={Repeat2}
+                  href={post2.repostUrl}
+                  onComplete={() => complete("repost2")}
+                />
+              </div>
+            </StepCard>
+
+            <StepCard
+              index={4}
+              delay="220ms"
               done={Boolean(submitted)}
               locked={!unlocked}
               title="Enter Base wallet"
@@ -283,7 +298,7 @@ export function WhitelistApp() {
                     <div className="absolute inset-0 flex items-center justify-center rounded-md bg-surface/80">
                       <span className="inline-flex items-center gap-1.5 px-2 text-center text-xs font-medium text-fg">
                         <Lock className="size-3.5 shrink-0" />
-                        Locked — complete tasks 1 & 2
+                        Locked — complete tasks 1–3
                       </span>
                     </div>
                   )}
@@ -311,11 +326,43 @@ export function WhitelistApp() {
         )}
 
         <p className="stagger-in text-center text-xs leading-relaxed text-muted" style={{ animationDelay: "260ms" }}>
-          Official @{SITE.handle} whitelist. Wallets are collected for ${SITE.token} allocation on{" "}
+          Official @{SITE.handle} whitelist. Wallets are collected for {SITE.token} allocation on{" "}
           {SITE.chain}. DYOR. Not financial advice.
         </p>
       </main>
     </div>
+  );
+}
+
+function TweetPreview({
+  excerpt,
+  image,
+  imageAlt,
+}: {
+  excerpt: string;
+  image: string;
+  imageAlt: string;
+}) {
+  return (
+    <article className="overflow-hidden rounded-lg bg-bg shadow-[var(--shadow-border)]">
+      <div className="flex items-center gap-2.5 px-3 pt-3">
+        <img
+          src="/cabal-avatar.jpg"
+          alt=""
+          className="size-8 rounded-md outline outline-1 -outline-offset-1 outline-fg/15"
+        />
+        <div className="min-w-0 leading-tight">
+          <p className="truncate text-sm font-medium text-fg">{SITE.displayName}</p>
+          <p className="text-xs text-muted">@{SITE.handle}</p>
+        </div>
+      </div>
+      <p className="px-3 pt-2 pb-2 text-sm leading-relaxed text-fg/90">{excerpt}</p>
+      <img
+        src={image}
+        alt={imageAlt}
+        className="aspect-[2/1] w-full object-cover outline outline-1 -outline-offset-1 outline-fg/10"
+      />
+    </article>
   );
 }
 
@@ -390,6 +437,7 @@ function TaskAction({
 
 function SuccessCard({ wallet, shareUrl }: { wallet: string; shareUrl: string }) {
   const short = `${wallet.slice(0, 6)}…${wallet.slice(-4)}`;
+  const latest = POSTS[POSTS.length - 1];
   return (
     <section className="stagger-in rounded-xl bg-surface p-5 text-center shadow-[var(--shadow-border)]">
       <span className="mx-auto mb-4 inline-flex size-12 items-center justify-center rounded-lg bg-primary text-primary-fg">
@@ -408,7 +456,7 @@ function SuccessCard({ wallet, shareUrl }: { wallet: string; shareUrl: string })
           </a>
         </Button>
         <Button asChild variant="outline" size="full">
-          <a href={SITE.tweetUrl} target="_blank" rel="noreferrer">
+          <a href={latest.url} target="_blank" rel="noreferrer">
             View the post
           </a>
         </Button>
