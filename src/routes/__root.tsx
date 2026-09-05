@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Join the $CABAL whitelist on Base. Follow @Basecable, like and repost both posts, turn on notifications, then submit your wallet.",
+          "Join the $CABAL whitelist on Base. Follow @Basecable, like, repost, reply, turn on notifications, then submit your wallet.",
       },
       { name: "theme-color", content: "#05060a" },
     ],

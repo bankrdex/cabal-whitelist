@@ -5,6 +5,7 @@ import {
   Check,
   Heart,
   Lock,
+  MessageCircle,
   Repeat2,
   UserPlus,
   Wallet,
@@ -20,6 +21,9 @@ import {
   STORAGE_KEYS,
   TASK_ORDER,
   WALLET_RE,
+  assignReply,
+  loadAssignedReplies,
+  replyIntentUrl,
   type TaskId,
   type TaskState,
 } from "@/lib/config";
@@ -56,6 +60,7 @@ export function WhitelistApp() {
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [replies, setReplies] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setTasks(loadTasks());
@@ -65,6 +70,11 @@ export function WhitelistApp() {
     } catch {
       /* ignore */
     }
+    let assigned = loadAssignedReplies();
+    for (const post of POSTS) {
+      assigned = assignReply(post.id, assigned).next;
+    }
+    setReplies(assigned);
   }, []);
 
   const completedCount = TASK_ORDER.filter((id) => tasks[id]).length;
@@ -121,8 +131,8 @@ export function WhitelistApp() {
 
   const post1 = POSTS[0];
   const post2 = POSTS[1];
-  const post1Done = tasks.like && tasks.repost && tasks.notify;
-  const post2Done = tasks.likeOpen && tasks.repostOpen;
+  const post1Done = tasks.like && tasks.repost && tasks.notify && tasks.reply;
+  const post2Done = tasks.likeOpen && tasks.repostOpen && tasks.replyOpen;
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -169,7 +179,7 @@ export function WhitelistApp() {
             CABAL WHITELIST
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            {SITE.bio}. Follow, like & repost both posts, and turn on notifications — then submit your Base wallet.
+            {SITE.bio}. Follow, like, repost, reply, and turn on notifications — then submit your Base wallet.
           </p>
           <p className="mt-3 font-mono text-xs tabular-nums text-muted">
             {completedCount}/{TASK_ORDER.length} tasks complete
@@ -204,7 +214,7 @@ export function WhitelistApp() {
               index={2}
               delay="140ms"
               done={post1Done}
-              title="Like, RT & turn on notifications"
+              title="Like, RT, reply & turn on notifications"
               body="Engage with this post on X, then tap the bell on the profile."
             >
               <TweetPreview excerpt={post1.excerpt} image={post1.image} imageAlt={post1.imageAlt} />
@@ -234,8 +244,14 @@ export function WhitelistApp() {
                   onComplete={() => complete("notify")}
                 />
               </div>
+              <ReplyAction
+                done={tasks.reply}
+                text={replies[post1.id]}
+                href={replies[post1.id] ? replyIntentUrl(post1.tweetId, replies[post1.id]) : post1.url}
+                onComplete={() => complete("reply")}
+              />
               <p className="text-xs text-muted">
-                Notifications: open the profile and tap the bell icon.
+                Notifications: open the profile and tap the bell icon. Your reply is unique to you.
               </p>
             </StepCard>
 
@@ -243,7 +259,7 @@ export function WhitelistApp() {
               index={3}
               delay="180ms"
               done={post2Done}
-              title="Like & RT the whitelist post"
+              title="Like, RT & reply to the whitelist post"
               body="Engage with the latest @Basecable post to stay eligible."
             >
               <TweetPreview excerpt={post2.excerpt} image={post2.image} imageAlt={post2.imageAlt} />
@@ -265,6 +281,12 @@ export function WhitelistApp() {
                   onComplete={() => complete("repostOpen")}
                 />
               </div>
+              <ReplyAction
+                done={tasks.replyOpen}
+                text={replies[post2.id]}
+                href={replies[post2.id] ? replyIntentUrl(post2.tweetId, replies[post2.id]) : post2.url}
+                onComplete={() => complete("replyOpen")}
+              />
             </StepCard>
 
             <StepCard
@@ -432,6 +454,31 @@ function TaskAction({
         {done ? doneLabel : label}
       </a>
     </Button>
+  );
+}
+
+function ReplyAction({
+  done,
+  text,
+  href,
+  onComplete,
+}: {
+  done: boolean;
+  text?: string;
+  href: string;
+  onComplete: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg bg-bg px-3 py-3 shadow-[var(--shadow-border)]">
+      <p className="text-xs font-medium tracking-wide text-muted">Your reply</p>
+      <p className="font-mono text-sm text-fg">{text || "lfg"}</p>
+      <Button asChild variant={done ? "outline" : "primary"} size="full">
+        <a href={href} target="_blank" rel="noreferrer" onClick={onComplete}>
+          {done ? <Check /> : <MessageCircle />}
+          {done ? "Replied" : "Reply with this"}
+        </a>
+      </Button>
+    </div>
   );
 }
 
