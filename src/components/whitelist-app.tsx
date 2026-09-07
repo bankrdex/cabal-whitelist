@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomCursor } from "@/components/cursor";
+import { Tokenomics } from "@/components/tokenomics";
 import { LAUNCH, SITE } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,8 @@ type EventStatus = "live" | "next" | "soon" | "done";
 function eventStatus(at: string, now: number, events: readonly { at: string }[]): EventStatus {
   const start = new Date(at).getTime();
   const idx = events.findIndex((e) => e.at === at);
-  const nextStart = idx < events.length - 1 ? new Date(events[idx + 1].at).getTime() : start + 30 * 60 * 1000;
+  const nextStart =
+    idx < events.length - 1 ? new Date(events[idx + 1].at).getTime() : start + 30 * 60 * 1000;
   if (now >= nextStart) return "done";
   if (now >= start) return "live";
   const upcoming = events.filter((e) => new Date(e.at).getTime() > now);
@@ -70,7 +72,7 @@ export function WhitelistApp() {
   const clock = nextEvent ? remaining(new Date(nextEvent.at).getTime(), now) : null;
 
   const shareUrl = useMemo(() => {
-    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n${SITE.openseaUrl}\n\n@${SITE.handle}`;
+    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n100B supply. 70B airdrop. 0 team.\n\n${SITE.openseaUrl}\n\n@${SITE.handle}`;
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
 
@@ -98,15 +100,23 @@ export function WhitelistApp() {
             <p className="text-xs text-muted">@{SITE.handle}</p>
           </div>
         </a>
-        <a
-          href={SITE.profileUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-10 items-center gap-2 rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
-        >
-          <XMark className="size-3.5" />
-          Official
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="#token"
+            className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
+          >
+            Token
+          </a>
+          <a
+            href={SITE.profileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center gap-2 rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
+          >
+            <XMark className="size-3.5" />
+            Official
+          </a>
+        </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-lg flex-col gap-5 px-4 pt-4 pb-16">
@@ -155,7 +165,10 @@ export function WhitelistApp() {
                   key={unit.l}
                   className="rounded-lg bg-surface-2 py-3 text-center shadow-[var(--shadow-border)]"
                 >
-                  <p className="font-display text-3xl font-semibold tabular-nums text-fg">
+                  <p
+                    suppressHydrationWarning
+                    className="font-display text-3xl font-semibold tabular-nums text-fg"
+                  >
                     {pad(unit.v)}
                   </p>
                   <p className="mt-1 text-xs text-muted">{unit.l}</p>
@@ -200,7 +213,8 @@ export function WhitelistApp() {
             const className = cn(
               "stagger-in flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]",
               status === "done" && "opacity-70",
-              event.id === "nft" && "transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-border-hover)]",
+              event.id === "nft" &&
+                "transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-border-hover)]",
             );
             const style = { animationDelay: `${180 + i * 50}ms` };
             if (event.id === "nft") {
@@ -225,9 +239,11 @@ export function WhitelistApp() {
           })}
         </section>
 
+        <Tokenomics />
+
         <section
           className="stagger-in rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]"
-          style={{ animationDelay: "340ms" }}
+          style={{ animationDelay: "520ms" }}
         >
           <p className="text-sm leading-relaxed text-muted">
             Stay close. NFT is FCFS at 3:30 PM {LAUNCH.timezone} on OpenSea. Token follows at 4:00 PM.
@@ -257,9 +273,10 @@ export function WhitelistApp() {
 
         <p
           className="stagger-in text-center text-xs leading-relaxed text-muted"
-          style={{ animationDelay: "380ms" }}
+          style={{ animationDelay: "560ms" }}
         >
-          Official @{SITE.handle} · {SITE.token} on {SITE.chain}. DYOR. Not financial advice.
+          Official @{SITE.handle} · {SITE.token} on {SITE.chain}. 100B supply. 70B airdrop. 0 team.
+          DYOR. Not financial advice.
         </p>
       </main>
     </div>
@@ -271,6 +288,7 @@ function StatusChip({ status }: { status: EventStatus }) {
     status === "live" ? "Live" : status === "next" ? "Next" : status === "done" ? "Done" : "Soon";
   return (
     <span
+      suppressHydrationWarning
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
         status === "live" && "bg-primary text-primary-fg",

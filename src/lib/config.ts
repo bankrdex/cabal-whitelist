@@ -42,5 +42,28 @@ export const LAUNCH = {
   ],
 } as const;
 
-export const WALLET_RE = /^0x[a-fA-F0-9]{40}$/;
+export const TOKEN = {
+  symbol: "$CABAL",
+  totalSupply: 100_000_000_000,
+  totalLabel: "100 billion",
+  airdrop: 70_000_000_000,
+  airdropLabel: "70 billion",
+  nftPool: 5_000_000_000,
+  nftPoolLabel: "5 billion",
+  basePool: 65_000_000_000,
+  basePoolLabel: "65 billion",
+  remainder: 30_000_000_000,
+  remainderLabel: "30 billion",
+  remainderBurn: 10_000_000_000,
+  remainderBurnLabel: "10 billion",
+  futureReserve: 20_000_000_000,
+  futureLabel: "20 billion",
+  perTx: 70,
+  exampleTxCount: 10,
+  exampleFinal: 700,
+  perNft: 900_090,
+  nftSupply: 5_555,
+  team: 0,
+} as const;
 
+export const WALLET_RE = /^0x[a-fA-F0-9]{40}$/;

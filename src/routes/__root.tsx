@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Thank you CABAL. 200,000 wallets in 3 days. NFT 3:30 PM UTC+1 FCFS on OpenSea, token 4:00 PM, airdrop 7:00 PM.",
+          "$CABAL on Base. 100 billion supply. 70 billion airdrop — 5B NFT holders, 65B Base users. 0 team. Unclaimed + 10B burned. 20B for future airdrops and NFT streaming rewards.",
       },
       { name: "theme-color", content: "#05060a" },
     ],

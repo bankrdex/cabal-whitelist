@@ -15,7 +15,7 @@
   --color-moon: #f0a020;
 
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Pixelify Sans", "Outfit", ui-sans-serif, sans-serif;
+  --font-display: "Pixelify Sans", "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --radius-sm: 0.5rem;
@@ -41,6 +41,7 @@
     -moz-osx-font-smoothing: grayscale;
     background: var(--color-bg);
     color: var(--color-fg);
+    scroll-behavior: smooth;
   }
 
   body {
@@ -102,5 +103,9 @@
 @media (prefers-reduced-motion: reduce) {
   .stagger-in {
     animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }
