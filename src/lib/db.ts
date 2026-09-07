@@ -176,7 +176,13 @@ async function createSql(): Promise<Sql> {
         "or a server route loader, never from client code.",
     );
   }
-  return dbSource === "neon" ? createNeonSql() : createPgliteSql();
+  if (databaseUrl) return createNeonSql();
+  // Nitro's Vercel preset does not ship pglite.data. Importing PGLite there
+  // crashes the process with an unhandled ENOENT. Dev uses in-memory PGLite.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL is required in production.");
+  }
+  return createPgliteSql();
 }
 
 /**
@@ -221,18 +227,23 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  */
 export function ensureDbReady(): Promise<void> {
   if (dbSource !== "pglite") return Promise.resolve();
+  if (process.env.NODE_ENV === "production") return Promise.resolve();
   return getSql().then(() => undefined);
 }
 
 // Server-only eager start: kick PGLite bootstrap as soon as this module loads in
 // Node. Client bundles never hit this path (`getSql` throws in the browser).
+// Production (Nitro/Vercel) must not touch PGLite — see createSql().
 const globalBoot = globalThis as typeof globalThis & {
   __pgBootstrapPromise__?: Promise<void>;
 };
-if (typeof window === "undefined" && dbSource === "pglite") {
+if (
+  typeof window === "undefined" &&
+  dbSource === "pglite" &&
+  process.env.NODE_ENV !== "production"
+) {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
     console.error("[db] PGLite bootstrap failed:", err);
-    throw err;
   });
 }

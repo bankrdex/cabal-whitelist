@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { WhitelistApp } from "@/components/whitelist-app";
+import { ClaimApp } from "@/components/claim-app";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  return <WhitelistApp />;
+  return <ClaimApp />;
 }

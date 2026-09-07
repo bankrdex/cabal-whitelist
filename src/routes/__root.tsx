@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { WalletProvider } from "@/components/wallet-provider";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "CABAL Whitelist";
+const APP_NAME = "CABAL Claim";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "$CABAL on Base. Claim opens 12:00 PM UTC+1. CA 0x9230534ac072ff9cda7085d5f2e25336a4651b07. Connect wallet to claim.",
+          "$CABAL is live on Base. Claim opens 12:00 PM UTC+1. Log in with email or X.",
       },
       { name: "theme-color", content: "#05060a" },
     ],

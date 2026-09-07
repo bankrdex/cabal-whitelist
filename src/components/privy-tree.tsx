@@ -14,23 +14,15 @@ export default function PrivyTree({ children }: { children: ReactNode }) {
           accentColor: "#3DDCFF",
           logo: "/cabal-avatar.jpg",
           landingHeader: `Claim ${SITE.token}`,
-          loginMessage: "Connect the Base wallet you submitted.",
-          showWalletLoginFirst: true,
+          loginMessage: "Log in with email or X. No MetaMask needed.",
+          showWalletLoginFirst: false,
           walletChainType: "ethereum-only",
-          walletList: [
-            "detected_ethereum_wallets",
-            "metamask",
-            "coinbase_wallet",
-            "base_account",
-            "rainbow",
-            "wallet_connect",
-          ],
         },
-        loginMethods: ["wallet"],
+        loginMethods: ["email", "twitter"],
         defaultChain: base,
         supportedChains: [base],
         embeddedWallets: {
-          ethereum: { createOnLogin: "off" },
+          ethereum: { createOnLogin: "all-users" },
         },
       }}
     >
