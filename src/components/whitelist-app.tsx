@@ -1,29 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import {
-  ArrowRight,
-  Bell,
-  Check,
-  Heart,
-  Lock,
-  MessageCircle,
-  Repeat2,
-  UserPlus,
-  Wallet,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CustomCursor } from "@/components/cursor";
-import {
-  EMPTY_TASKS,
-  POSTS,
-  SITE,
-  STORAGE_KEYS,
-  TASK_ORDER,
-  WALLET_RE,
-  type TaskId,
-  type TaskState,
-} from "@/lib/config";
+import { LAUNCH, SITE } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 function XMark({ className }: { className?: string }) {
@@ -48,93 +27,52 @@ function TelegramMark({ className }: { className?: string }) {
   );
 }
 
-function loadTasks(): TaskState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.tasks);
-    if (!raw) return { ...EMPTY_TASKS };
-    return { ...EMPTY_TASKS, ...JSON.parse(raw) };
-  } catch {
-    return { ...EMPTY_TASKS };
-  }
+type EventStatus = "live" | "next" | "soon" | "done";
+
+function eventStatus(at: string, now: number, events: readonly { at: string }[]): EventStatus {
+  const start = new Date(at).getTime();
+  const idx = events.findIndex((e) => e.at === at);
+  const nextStart = idx < events.length - 1 ? new Date(events[idx + 1].at).getTime() : start + 30 * 60 * 1000;
+  if (now >= nextStart) return "done";
+  if (now >= start) return "live";
+  const upcoming = events.filter((e) => new Date(e.at).getTime() > now);
+  if (upcoming[0]?.at === at) return "next";
+  return "soon";
 }
 
-function persistTasks(next: TaskState) {
-  localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(next));
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function remaining(to: number, now: number) {
+  const ms = Math.max(0, to - now);
+  const total = Math.floor(ms / 1000);
+  return {
+    h: Math.floor(total / 3600),
+    m: Math.floor((total % 3600) / 60),
+    s: total % 60,
+    done: ms <= 0,
+  };
 }
 
 export function WhitelistApp() {
-  const [tasks, setTasks] = useState<TaskState>(EMPTY_TASKS);
-  const [wallet, setWallet] = useState("");
-  const [submitted, setSubmitted] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    setTasks(loadTasks());
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.submitted);
-      if (saved) setSubmitted(saved);
-    } catch {
-      /* ignore */
-    }
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
-  const completedCount = TASK_ORDER.filter((id) => tasks[id]).length;
-  const unlocked = completedCount === TASK_ORDER.length;
-  const walletValid = WALLET_RE.test(wallet.trim());
+  const nextEvent = useMemo(() => {
+    return LAUNCH.events.find((e) => new Date(e.at).getTime() > now) ?? null;
+  }, [now]);
 
-  function complete(id: TaskId) {
-    setTasks((prev) => {
-      if (prev[id]) return prev;
-      const next = { ...prev, [id]: true };
-      persistTasks(next);
-      const done = TASK_ORDER.every((key) => next[key]);
-      if (done) toast.success("Tasks complete. Wallet unlocked.");
-      return next;
-    });
-  }
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!unlocked || submitting) return;
-    const value = wallet.trim();
-    if (!WALLET_RE.test(value)) {
-      setError("Enter a valid Base wallet (0x… 42 characters).");
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: value }),
-      });
-      const data = (await res.json().catch(() => null)) as
-        | { ok?: boolean; error?: string }
-        | null;
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Unable to register wallet. Please try again.");
-      }
-      localStorage.setItem(STORAGE_KEYS.submitted, value);
-      setSubmitted(value);
-      toast.success("You're on the list.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to register wallet. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const clock = nextEvent ? remaining(new Date(nextEvent.at).getTime(), now) : null;
 
   const shareUrl = useMemo(() => {
-    const text = `I secured my $CABAL whitelist spot on Base.\n\n@${SITE.handle}`;
+    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n@${SITE.handle}`;
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
-
-  const post1 = POSTS[0];
-  const post2 = POSTS[1];
-  const post1Done = tasks.like && tasks.repost && tasks.notify && tasks.reply;
-  const post2Done = tasks.likeOpen && tasks.repostOpen && tasks.replyOpen;
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -175,340 +113,140 @@ export function WhitelistApp() {
         <section className="stagger-in text-center" style={{ animationDelay: "40ms" }}>
           <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-1 text-xs font-medium tracking-wide text-muted shadow-[var(--shadow-border)]">
             <span className="size-1.5 rounded-full bg-primary" />
-            {SITE.chain} · Whitelist open
+            {SITE.chain} · Launch day
           </p>
           <h1 className="font-display text-4xl font-semibold tracking-wide text-fg sm:text-5xl">
-            CABAL WHITELIST
+            THANK YOU
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            {SITE.bio}. Follow, join Telegram, like, repost, reply, and turn on notifications — then submit your Base wallet.
-          </p>
-          <p className="mt-3 font-mono text-xs tabular-nums text-muted">
-            {completedCount}/{TASK_ORDER.length} tasks complete
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+            For every follow, every reply, every wallet. The support you showed us is why this
+            happened. Without you we would not have achieved what we achieved.
           </p>
         </section>
 
-        {submitted ? (
-          <SuccessCard wallet={submitted} shareUrl={shareUrl} />
-        ) : (
-          <>
-            <StepCard
-              index={1}
-              delay="80ms"
-              done={tasks.follow}
-              title="Follow CABAL on X"
-              body="Follow the official account to verify you're in the cabal."
-            >
-              <Button asChild variant={tasks.follow ? "outline" : "primary"} size="full">
-                <a
-                  href={SITE.followUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => complete("follow")}
+        <section
+          className="stagger-in rounded-xl bg-surface p-5 text-center shadow-[var(--shadow-border)]"
+          style={{ animationDelay: "90ms" }}
+        >
+          <p className="font-display text-5xl font-semibold tracking-wide text-primary tabular-nums">
+            {LAUNCH.wallets}
+          </p>
+          <p className="mt-2 text-sm font-medium text-fg">wallets in {LAUNCH.days} days</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            Now it is our turn. Get ready for the NFT and the token — today.
+          </p>
+        </section>
+
+        {clock && nextEvent && !clock.done && (
+          <section
+            className="stagger-in rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]"
+            style={{ animationDelay: "130ms" }}
+          >
+            <p className="text-center text-xs font-medium tracking-wide text-muted">
+              Next · {nextEvent.label}
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {[
+                { v: clock.h, l: "hrs" },
+                { v: clock.m, l: "min" },
+                { v: clock.s, l: "sec" },
+              ].map((unit) => (
+                <div
+                  key={unit.l}
+                  className="rounded-lg bg-surface-2 py-3 text-center shadow-[var(--shadow-border)]"
                 >
-                  {tasks.follow ? <Check /> : <UserPlus />}
-                  {tasks.follow ? "Following" : "Follow @Basecable"}
-                </a>
-              </Button>
-            </StepCard>
-
-            <StepCard
-              index={2}
-              delay="110ms"
-              done={tasks.telegram}
-              title="Join the Telegram"
-              body="Join the official BASECABAL channel for drops and updates."
-            >
-              <Button asChild variant={tasks.telegram ? "outline" : "primary"} size="full">
-                <a
-                  href={SITE.telegramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => complete("telegram")}
-                >
-                  {tasks.telegram ? <Check /> : <TelegramMark className="size-4" />}
-                  {tasks.telegram ? "Joined Telegram" : "Join t.me/basecabaI"}
-                </a>
-              </Button>
-            </StepCard>
-
-            <StepCard
-              index={3}
-              delay="140ms"
-              done={post1Done}
-              title="Like, RT, reply & turn on notifications"
-              body="Engage with this post on X, then tap the bell on the profile."
-            >
-              <TweetPreview excerpt={post1.excerpt} image={post1.image} imageAlt={post1.imageAlt} />
-              <div className="grid grid-cols-2 gap-2">
-                <TaskAction
-                  done={tasks.like}
-                  label="Like"
-                  doneLabel="Liked"
-                  icon={Heart}
-                  href={post1.likeUrl}
-                  onComplete={() => complete("like")}
-                />
-                <TaskAction
-                  done={tasks.repost}
-                  label="Repost"
-                  doneLabel="Reposted"
-                  icon={Repeat2}
-                  href={post1.repostUrl}
-                  onComplete={() => complete("repost")}
-                />
-                <TaskAction
-                  done={tasks.notify}
-                  label="Notify"
-                  doneLabel="Bell on"
-                  icon={Bell}
-                  href={SITE.notifyUrl}
-                  onComplete={() => complete("notify")}
-                />
-                <TaskAction
-                  done={tasks.reply}
-                  label="Reply"
-                  doneLabel="Replied"
-                  icon={MessageCircle}
-                  href={post1.replyUrl}
-                  onComplete={() => complete("reply")}
-                />
-              </div>
-              <p className="text-xs text-muted">
-                Notifications: open the profile and tap the bell icon. Reply in your own words.
-              </p>
-            </StepCard>
-
-            <StepCard
-              index={4}
-              delay="180ms"
-              done={post2Done}
-              title="Like, RT & reply to the whitelist post"
-              body="Engage with the latest @Basecable post to stay eligible."
-            >
-              <TweetPreview excerpt={post2.excerpt} image={post2.image} imageAlt={post2.imageAlt} />
-              <div className="grid grid-cols-3 gap-2">
-                <TaskAction
-                  done={tasks.likeOpen}
-                  label="Like"
-                  doneLabel="Liked"
-                  icon={Heart}
-                  href={post2.likeUrl}
-                  onComplete={() => complete("likeOpen")}
-                />
-                <TaskAction
-                  done={tasks.repostOpen}
-                  label="Repost"
-                  doneLabel="Reposted"
-                  icon={Repeat2}
-                  href={post2.repostUrl}
-                  onComplete={() => complete("repostOpen")}
-                />
-                <TaskAction
-                  done={tasks.replyOpen}
-                  label="Reply"
-                  doneLabel="Replied"
-                  icon={MessageCircle}
-                  href={post2.replyUrl}
-                  onComplete={() => complete("replyOpen")}
-                />
-              </div>
-            </StepCard>
-
-            <StepCard
-              index={5}
-              delay="220ms"
-              done={Boolean(submitted)}
-              locked={!unlocked}
-              title="Enter Base wallet"
-              body="Submit your Base address to claim your whitelist spot."
-            >
-              <form onSubmit={onSubmit} className="flex flex-col gap-3">
-                <label className="text-xs font-medium text-muted" htmlFor="wallet">
-                  Base wallet address
-                </label>
-                <div className="relative">
-                  <Input
-                    id="wallet"
-                    name="wallet"
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="0x…"
-                    value={wallet}
-                    disabled={!unlocked || submitting}
-                    onChange={(e) => {
-                      setWallet(e.target.value);
-                      if (error) setError(null);
-                    }}
-                    aria-invalid={Boolean(error)}
-                  />
-                  {!unlocked && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-surface/80">
-                      <span className="inline-flex items-center gap-1.5 px-2 text-center text-xs font-medium text-fg">
-                        <Lock className="size-3.5 shrink-0" />
-                        Locked — complete tasks 1–4
-                      </span>
-                    </div>
-                  )}
+                  <p className="font-display text-3xl font-semibold tabular-nums text-fg">
+                    {pad(unit.v)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">{unit.l}</p>
                 </div>
-                {error && <p className="text-xs text-danger">{error}</p>}
-                <Button
-                  type="submit"
-                  variant={!unlocked ? "locked" : "primary"}
-                  size="full"
-                  disabled={!unlocked || submitting || !walletValid}
-                >
-                  {submitting ? (
-                    "Submitting…"
-                  ) : (
-                    <>
-                      <Wallet />
-                      Submit whitelist registration
-                      <ArrowRight />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </StepCard>
-          </>
+              ))}
+            </div>
+          </section>
         )}
 
-        <p className="stagger-in text-center text-xs leading-relaxed text-muted" style={{ animationDelay: "260ms" }}>
-          Official @{SITE.handle} whitelist. Wallets are collected for {SITE.token} allocation on{" "}
-          {SITE.chain}. DYOR. Not financial advice.
+        <section className="flex flex-col gap-3">
+          {LAUNCH.events.map((event, i) => {
+            const status = eventStatus(event.at, now, LAUNCH.events);
+            return (
+              <article
+                key={event.id}
+                className={cn(
+                  "stagger-in flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]",
+                  status === "done" && "opacity-70",
+                )}
+                style={{ animationDelay: `${180 + i * 50}ms` }}
+              >
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-surface-2 font-display text-sm font-semibold text-primary shadow-[var(--shadow-border)]">
+                  {status === "done" ? <Check className="size-5 text-success" /> : i + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-lg font-semibold tracking-wide text-fg">
+                      {event.label}
+                    </h2>
+                    <StatusChip status={status} />
+                  </div>
+                  <p className="mt-0.5 text-sm text-muted">{event.detail}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-mono text-sm font-medium tabular-nums text-fg">{event.time}</p>
+                  <p className="text-xs text-muted">{LAUNCH.timezone}</p>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+
+        <section
+          className="stagger-in rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]"
+          style={{ animationDelay: "340ms" }}
+        >
+          <p className="text-sm leading-relaxed text-muted">
+            Stay close. NFT is FCFS at 3:30 PM {LAUNCH.timezone}. Token follows at 4:00 PM. Airdrop
+            hits whitelisted wallets at 7:00 PM.
+          </p>
+          <div className="mt-4 flex flex-col gap-2">
+            <Button asChild size="full">
+              <a href={SITE.telegramUrl} target="_blank" rel="noreferrer">
+                <TelegramMark className="size-4" />
+                Join Telegram for the drop
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="full">
+              <a href={shareUrl} target="_blank" rel="noreferrer">
+                <XMark className="size-3.5" />
+                Tell them you were here
+              </a>
+            </Button>
+          </div>
+        </section>
+
+        <p
+          className="stagger-in text-center text-xs leading-relaxed text-muted"
+          style={{ animationDelay: "380ms" }}
+        >
+          Official @{SITE.handle} · {SITE.token} on {SITE.chain}. DYOR. Not financial advice.
         </p>
       </main>
     </div>
   );
 }
 
-function TweetPreview({
-  excerpt,
-  image,
-  imageAlt,
-}: {
-  excerpt: string;
-  image: string;
-  imageAlt: string;
-}) {
+function StatusChip({ status }: { status: EventStatus }) {
+  const label =
+    status === "live" ? "Live" : status === "next" ? "Next" : status === "done" ? "Done" : "Soon";
   return (
-    <article className="overflow-hidden rounded-lg bg-bg shadow-[var(--shadow-border)]">
-      <div className="flex items-center gap-2.5 px-3 pt-3">
-        <img
-          src="/cabal-avatar.jpg"
-          alt=""
-          className="size-8 rounded-md outline outline-1 -outline-offset-1 outline-fg/15"
-        />
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-medium text-fg">{SITE.displayName}</p>
-          <p className="text-xs text-muted">@{SITE.handle}</p>
-        </div>
-      </div>
-      <p className="px-3 pt-2 pb-2 text-sm leading-relaxed text-fg/90">{excerpt}</p>
-      <img
-        src={image}
-        alt={imageAlt}
-        className="aspect-[2/1] w-full object-cover outline outline-1 -outline-offset-1 outline-fg/10"
-      />
-    </article>
-  );
-}
-
-function StepCard({
-  index,
-  title,
-  body,
-  children,
-  done,
-  locked,
-  delay,
-}: {
-  index: number;
-  title: string;
-  body: string;
-  children: ReactNode;
-  done?: boolean;
-  locked?: boolean;
-  delay?: string;
-}) {
-  return (
-    <section
+    <span
       className={cn(
-        "stagger-in rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]",
-        locked && "opacity-80",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        status === "live" && "bg-primary text-primary-fg",
+        status === "next" && "bg-surface-2 text-primary shadow-[var(--shadow-border)]",
+        status === "soon" && "bg-surface-2 text-muted shadow-[var(--shadow-border)]",
+        status === "done" && "bg-surface-2 text-muted shadow-[var(--shadow-border)]",
       )}
-      style={{ animationDelay: delay }}
     >
-      <div className="mb-3 flex items-start gap-3">
-        <span
-          className={cn(
-            "mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-md font-display text-sm font-semibold",
-            done ? "bg-primary text-primary-fg" : "bg-surface-2 text-fg shadow-[var(--shadow-border)]",
-          )}
-        >
-          {done ? <Check className="size-4" /> : index}
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold tracking-wide text-fg">{title}</h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted">{body}</p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3">{children}</div>
-    </section>
-  );
-}
-
-function TaskAction({
-  done,
-  label,
-  doneLabel,
-  icon: Icon,
-  href,
-  onComplete,
-}: {
-  done: boolean;
-  label: string;
-  doneLabel: string;
-  icon: typeof Heart;
-  href: string;
-  onComplete: () => void;
-}) {
-  return (
-    <Button asChild variant={done ? "outline" : "primary"} size="sm" className="w-full">
-      <a href={href} target="_blank" rel="noreferrer" onClick={onComplete}>
-        {done ? <Check /> : <Icon />}
-        {done ? doneLabel : label}
-      </a>
-    </Button>
-  );
-}
-
-function SuccessCard({ wallet, shareUrl }: { wallet: string; shareUrl: string }) {
-  const short = `${wallet.slice(0, 6)}…${wallet.slice(-4)}`;
-  const latest = POSTS[POSTS.length - 1];
-  return (
-    <section className="stagger-in rounded-xl bg-surface p-5 text-center shadow-[var(--shadow-border)]">
-      <span className="mx-auto mb-4 inline-flex size-12 items-center justify-center rounded-lg bg-primary text-primary-fg">
-        <Check className="size-6" />
-      </span>
-      <h2 className="font-display text-2xl font-semibold tracking-wide text-fg">You're on the list</h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Wallet registered for the {SITE.token} whitelist on {SITE.chain}.
-      </p>
-      <p className="mt-3 font-mono text-sm text-primary">{short}</p>
-      <div className="mt-5 flex flex-col gap-2">
-        <Button asChild size="full">
-          <a href={shareUrl} target="_blank" rel="noreferrer">
-            <XMark className="size-3.5" />
-            Announce your spot
-          </a>
-        </Button>
-        <Button asChild variant="outline" size="full">
-          <a href={latest.url} target="_blank" rel="noreferrer">
-            View the post
-          </a>
-        </Button>
-      </div>
-    </section>
+      {label}
+    </span>
   );
 }
