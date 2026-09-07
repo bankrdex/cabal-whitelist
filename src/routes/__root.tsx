@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "$CABAL on Base. 100 billion supply. 70 billion airdrop — 5B NFT holders, 65B Base users. 0 team. Unclaimed + 10B burned. 20B for future airdrops and NFT streaming rewards.",
+          "$CABAL on Base. CA 0x9230534ac072ff9cda7085d5f2e25336a4651b07. 100 billion supply. 70 billion airdrop. Chart and chat on DexScreener.",
       },
       { name: "theme-color", content: "#05060a" },
     ],

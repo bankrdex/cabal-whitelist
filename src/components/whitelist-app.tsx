@@ -3,7 +3,8 @@ import { Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomCursor } from "@/components/cursor";
 import { Tokenomics } from "@/components/tokenomics";
-import { LAUNCH, SITE } from "@/lib/config";
+import { DexEmbed } from "@/components/dex-embed";
+import { LAUNCH, SITE, TOKEN } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 function XMark({ className }: { className?: string }) {
@@ -72,7 +73,7 @@ export function WhitelistApp() {
   const clock = nextEvent ? remaining(new Date(nextEvent.at).getTime(), now) : null;
 
   const shareUrl = useMemo(() => {
-    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n100B supply. 70B airdrop. 0 team.\n\n${SITE.openseaUrl}\n\n@${SITE.handle}`;
+    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\n${SITE.token} ${TOKEN.address}\n${TOKEN.dexscreenerUrl}\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n100B supply. 70B airdrop. 0 team.\n\n@${SITE.handle}`;
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
 
@@ -102,6 +103,12 @@ export function WhitelistApp() {
         </a>
         <div className="flex items-center gap-2">
           <a
+            href="#chart"
+            className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
+          >
+            Chart
+          </a>
+          <a
             href="#token"
             className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
           >
@@ -114,7 +121,7 @@ export function WhitelistApp() {
             className="inline-flex h-10 items-center gap-2 rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
           >
             <XMark className="size-3.5" />
-            Official
+            <span className="hidden sm:inline">Official</span>
           </a>
         </div>
       </header>
@@ -178,14 +185,21 @@ export function WhitelistApp() {
           </section>
         )}
 
-        <div className="stagger-in" style={{ animationDelay: "150ms" }}>
+        <div className="stagger-in flex flex-col gap-2" style={{ animationDelay: "150ms" }}>
           <Button asChild size="full">
             <a href={SITE.openseaUrl} target="_blank" rel="noreferrer">
               Mint on OpenSea
               <ExternalLink />
             </a>
           </Button>
+          <Button asChild variant="outline" size="full">
+            <a href="#chart">
+              Chart & chat
+            </a>
+          </Button>
         </div>
+
+        <DexEmbed />
 
         <section className="flex flex-col gap-3">
           {LAUNCH.events.map((event, i) => {
@@ -275,8 +289,8 @@ export function WhitelistApp() {
           className="stagger-in text-center text-xs leading-relaxed text-muted"
           style={{ animationDelay: "560ms" }}
         >
-          Official @{SITE.handle} · {SITE.token} on {SITE.chain}. 100B supply. 70B airdrop. 0 team.
-          DYOR. Not financial advice.
+          Official @{SITE.handle} · {SITE.token} on {SITE.chain}. CA {TOKEN.address}. 100B supply.
+          70B airdrop. 0 team. DYOR. Not financial advice.
         </p>
       </main>
     </div>

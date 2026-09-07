@@ -42,8 +42,14 @@ export const LAUNCH = {
   ],
 } as const;
 
+const CA = "0x9230534ac072ff9cda7085d5f2e25336a4651b07";
+
 export const TOKEN = {
   symbol: "$CABAL",
+  address: CA,
+  dexscreenerUrl: `https://dexscreener.com/base/${CA}`,
+  embedUrl: `https://dexscreener.com/base/${CA}?embed=1&loadChartSettings=0&trades=1&tabs=1&info=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15`,
+  basescanUrl: `https://basescan.org/token/${CA}`,
   totalSupply: 100_000_000_000,
   totalLabel: "100 billion",
   airdrop: 70_000_000_000,
