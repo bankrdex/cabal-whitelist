@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomCursor } from "@/components/cursor";
 import { LAUNCH, SITE } from "@/lib/config";
@@ -70,7 +70,7 @@ export function WhitelistApp() {
   const clock = nextEvent ? remaining(new Date(nextEvent.at).getTime(), now) : null;
 
   const shareUrl = useMemo(() => {
-    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n@${SITE.handle}`;
+    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n${SITE.openseaUrl}\n\n@${SITE.handle}`;
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
 
@@ -165,18 +165,20 @@ export function WhitelistApp() {
           </section>
         )}
 
+        <div className="stagger-in" style={{ animationDelay: "150ms" }}>
+          <Button asChild size="full">
+            <a href={SITE.openseaUrl} target="_blank" rel="noreferrer">
+              Mint on OpenSea
+              <ExternalLink />
+            </a>
+          </Button>
+        </div>
+
         <section className="flex flex-col gap-3">
           {LAUNCH.events.map((event, i) => {
             const status = eventStatus(event.at, now, LAUNCH.events);
-            return (
-              <article
-                key={event.id}
-                className={cn(
-                  "stagger-in flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]",
-                  status === "done" && "opacity-70",
-                )}
-                style={{ animationDelay: `${180 + i * 50}ms` }}
-              >
+            const inner = (
+              <>
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-surface-2 font-display text-sm font-semibold text-primary shadow-[var(--shadow-border)]">
                   {status === "done" ? <Check className="size-5 text-success" /> : i + 1}
                 </div>
@@ -193,6 +195,31 @@ export function WhitelistApp() {
                   <p className="font-mono text-sm font-medium tabular-nums text-fg">{event.time}</p>
                   <p className="text-xs text-muted">{LAUNCH.timezone}</p>
                 </div>
+              </>
+            );
+            const className = cn(
+              "stagger-in flex items-center gap-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]",
+              status === "done" && "opacity-70",
+              event.id === "nft" && "transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-border-hover)]",
+            );
+            const style = { animationDelay: `${180 + i * 50}ms` };
+            if (event.id === "nft") {
+              return (
+                <a
+                  key={event.id}
+                  href={SITE.openseaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={className}
+                  style={style}
+                >
+                  {inner}
+                </a>
+              );
+            }
+            return (
+              <article key={event.id} className={className} style={style}>
+                {inner}
               </article>
             );
           })}
@@ -203,11 +230,17 @@ export function WhitelistApp() {
           style={{ animationDelay: "340ms" }}
         >
           <p className="text-sm leading-relaxed text-muted">
-            Stay close. NFT is FCFS at 3:30 PM {LAUNCH.timezone}. Token follows at 4:00 PM. Airdrop
-            hits whitelisted wallets at 7:00 PM.
+            Stay close. NFT is FCFS at 3:30 PM {LAUNCH.timezone} on OpenSea. Token follows at 4:00 PM.
+            Airdrop hits whitelisted wallets at 7:00 PM.
           </p>
           <div className="mt-4 flex flex-col gap-2">
             <Button asChild size="full">
+              <a href={SITE.openseaUrl} target="_blank" rel="noreferrer">
+                OpenSea collection
+                <ExternalLink />
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="full">
               <a href={SITE.telegramUrl} target="_blank" rel="noreferrer">
                 <TelegramMark className="size-4" />
                 Join Telegram for the drop

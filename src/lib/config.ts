@@ -10,6 +10,7 @@ export const SITE = {
   notifyUrl: "https://x.com/Basecable",
   telegramUrl: "https://t.me/basecabaI",
   telegramHandle: "basecabaI",
+  openseaUrl: "https://opensea.io/collection/basecabal-341365337/overview",
 } as const;
 
 export const LAUNCH = {
@@ -20,7 +21,7 @@ export const LAUNCH = {
     {
       id: "nft",
       label: "NFT launch",
-      detail: "FCFS",
+      detail: "OpenSea · FCFS · 5,555",
       time: "3:30 PM",
       at: "2026-09-07T15:30:00+01:00",
     },
