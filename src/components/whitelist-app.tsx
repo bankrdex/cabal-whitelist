@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { CustomCursor } from "@/components/cursor";
 import { Tokenomics } from "@/components/tokenomics";
 import { DexEmbed } from "@/components/dex-embed";
-import { LAUNCH, SITE, TOKEN } from "@/lib/config";
+import { ClaimPanel } from "@/components/claim-panel";
+import { CLAIM, LAUNCH, SITE, TOKEN } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 function XMark({ className }: { className?: string }) {
@@ -34,8 +35,10 @@ type EventStatus = "live" | "next" | "soon" | "done";
 function eventStatus(at: string, now: number, events: readonly { at: string }[]): EventStatus {
   const start = new Date(at).getTime();
   const idx = events.findIndex((e) => e.at === at);
-  const nextStart =
-    idx < events.length - 1 ? new Date(events[idx + 1].at).getTime() : start + 30 * 60 * 1000;
+  const isLast = idx === events.length - 1;
+  const nextStart = isLast
+    ? Number.POSITIVE_INFINITY
+    : new Date(events[idx + 1]!.at).getTime();
   if (now >= nextStart) return "done";
   if (now >= start) return "live";
   const upcoming = events.filter((e) => new Date(e.at).getTime() > now);
@@ -73,7 +76,7 @@ export function WhitelistApp() {
   const clock = nextEvent ? remaining(new Date(nextEvent.at).getTime(), now) : null;
 
   const shareUrl = useMemo(() => {
-    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\n${SITE.token} ${TOKEN.address}\n${TOKEN.dexscreenerUrl}\n\nNFT ${LAUNCH.events[0].time} ${LAUNCH.timezone} FCFS\nToken ${LAUNCH.events[1].time}\nAirdrop ${LAUNCH.events[2].time}\n\n100B supply. 70B airdrop. 0 team.\n\n@${SITE.handle}`;
+    const text = `Thank you CABAL. ${LAUNCH.wallets} wallets in ${LAUNCH.days} days.\n\nClaim ${CLAIM.time} ${CLAIM.timezone}\n${SITE.token} ${TOKEN.address}\n${TOKEN.dexscreenerUrl}\n\n@${SITE.handle}`;
     return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
   }, []);
 
@@ -103,16 +106,16 @@ export function WhitelistApp() {
         </a>
         <div className="flex items-center gap-2">
           <a
+            href="#claim"
+            className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
+          >
+            Claim
+          </a>
+          <a
             href="#chart"
             className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
           >
             Chart
-          </a>
-          <a
-            href="#token"
-            className="inline-flex h-10 items-center rounded-md bg-surface-2 px-3 text-sm font-medium text-fg shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
-          >
-            Token
           </a>
           <a
             href={SITE.profileUrl}
@@ -130,7 +133,7 @@ export function WhitelistApp() {
         <section className="stagger-in text-center" style={{ animationDelay: "40ms" }}>
           <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-1 text-xs font-medium tracking-wide text-muted shadow-[var(--shadow-border)]">
             <span className="size-1.5 rounded-full bg-primary" />
-            {SITE.chain} · Launch day
+            {SITE.chain} · Claim day
           </p>
           <h1 className="font-display text-4xl font-semibold tracking-wide text-fg sm:text-5xl">
             THANK YOU
@@ -150,11 +153,11 @@ export function WhitelistApp() {
           </p>
           <p className="mt-2 text-sm font-medium text-fg">wallets in {LAUNCH.days} days</p>
           <p className="mt-2 text-xs leading-relaxed text-muted">
-            Now it is our turn. Get ready for the NFT and the token — today.
+            Now it is our turn. Connect the wallet you submitted and claim.
           </p>
         </section>
 
-        {clock && nextEvent && !clock.done && (
+        {clock && nextEvent && !clock.done && nextEvent.id !== "airdrop" && (
           <section
             className="stagger-in rounded-xl bg-surface p-4 shadow-[var(--shadow-border)]"
             style={{ animationDelay: "130ms" }}
@@ -184,6 +187,8 @@ export function WhitelistApp() {
             </div>
           </section>
         )}
+
+        <ClaimPanel />
 
         <div className="stagger-in flex flex-col gap-2" style={{ animationDelay: "150ms" }}>
           <Button asChild size="full">
@@ -229,6 +234,8 @@ export function WhitelistApp() {
               status === "done" && "opacity-70",
               event.id === "nft" &&
                 "transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-border-hover)]",
+              event.id === "airdrop" &&
+                "transition-[box-shadow] duration-150 hover:shadow-[var(--shadow-border-hover)]",
             );
             const style = { animationDelay: `${180 + i * 50}ms` };
             if (event.id === "nft") {
@@ -241,6 +248,13 @@ export function WhitelistApp() {
                   className={className}
                   style={style}
                 >
+                  {inner}
+                </a>
+              );
+            }
+            if (event.id === "airdrop") {
+              return (
+                <a key={event.id} href="#claim" className={className} style={style}>
                   {inner}
                 </a>
               );
@@ -260,8 +274,8 @@ export function WhitelistApp() {
           style={{ animationDelay: "520ms" }}
         >
           <p className="text-sm leading-relaxed text-muted">
-            Stay close. NFT is FCFS at 3:30 PM {LAUNCH.timezone} on OpenSea. Token follows at 4:00 PM.
-            Airdrop hits whitelisted wallets at 7:00 PM.
+            Stay close. Claim opens {CLAIM.time} {CLAIM.timezone}. Connect the Base wallet you
+            submitted. NFT is live on OpenSea.
           </p>
           <div className="mt-4 flex flex-col gap-2">
             <Button asChild size="full">

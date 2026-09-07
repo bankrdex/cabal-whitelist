@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { WalletProvider } from "@/components/wallet-provider";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "CABAL Whitelist";
@@ -14,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "$CABAL on Base. CA 0x9230534ac072ff9cda7085d5f2e25336a4651b07. 100 billion supply. 70 billion airdrop. Chart and chat on DexScreener.",
+          "$CABAL on Base. Claim opens 12:00 PM UTC+1. CA 0x9230534ac072ff9cda7085d5f2e25336a4651b07. Connect wallet to claim.",
       },
       { name: "theme-color", content: "#05060a" },
     ],
@@ -39,7 +40,9 @@ export const Route = createRootRoute({
       <body>
         <PreviewHostBridge />
         <AuthProvider>
-          <Outlet />
+          <WalletProvider>
+            <Outlet />
+          </WalletProvider>
         </AuthProvider>
         <Scripts />
       </body>

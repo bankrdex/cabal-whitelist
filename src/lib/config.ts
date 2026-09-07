@@ -13,6 +13,14 @@ export const SITE = {
   openseaUrl: "https://opensea.io/collection/basecabal-341365337/overview",
 } as const;
 
+export const CLAIM = {
+  label: "Airdrop claim",
+  detail: "Connect wallet · Whitelisted wallets",
+  time: "12:00 PM",
+  at: "2026-09-08T12:00:00+01:00",
+  timezone: "UTC+1",
+} as const;
+
 export const LAUNCH = {
   wallets: "200,000",
   days: "3",
@@ -34,10 +42,10 @@ export const LAUNCH = {
     },
     {
       id: "airdrop",
-      label: "Airdrop distribution",
-      detail: "Whitelisted wallets",
-      time: "7:00 PM",
-      at: "2026-09-07T19:00:00+01:00",
+      label: CLAIM.label,
+      detail: CLAIM.detail,
+      time: CLAIM.time,
+      at: CLAIM.at,
     },
   ],
 } as const;
@@ -72,4 +80,13 @@ export const TOKEN = {
   team: 0,
 } as const;
 
+export const PRIVY = {
+  appId: (import.meta.env.VITE_PRIVY_APP_ID as string | undefined)?.trim() || "",
+} as const;
+
 export const WALLET_RE = /^0x[a-fA-F0-9]{40}$/;
+
+export function shortAddress(address: string) {
+  if (address.length < 12) return address;
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
