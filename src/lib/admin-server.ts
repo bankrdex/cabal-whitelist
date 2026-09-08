@@ -5,6 +5,7 @@ import { z } from "zod";
 import { nftAllocation, totalAllocation, txAllocation } from "@/lib/allocation";
 import { CLAIM } from "@/lib/config";
 import { getSql } from "@/lib/db";
+import { eligibleCount, isEligibleWallet } from "@/lib/eligible";
 import { env } from "@/lib/env.server";
 import { allocationLeaf, buildMerkle } from "@/lib/merkle";
 import { normalizeWallet } from "@/lib/validation";
@@ -94,7 +95,8 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
     const paused = await sql<{ value: string }>`select value from claim_settings where key = 'paused'`;
     const root = await sql<{ value: string }>`select value from claim_settings where key = 'merkle_root'`;
     return {
-      eligibleWallets: wallets[0]?.n ?? 0,
+      eligibleWallets: eligibleCount(),
+      checkedWallets: wallets[0]?.n ?? 0,
       totalAllocation: Number(total[0]?.n ?? 0),
       transactionAllocation: Number(tx[0]?.n ?? 0),
       nftAllocation: Number(nft[0]?.n ?? 0),
@@ -107,8 +109,15 @@ export const adminStats = createServerFn({ method: "GET" }).handler(async () => 
       dbReady: true,
     };
   } catch {
+    let listSize = 0;
+    try {
+      listSize = eligibleCount();
+    } catch {
+      listSize = 0;
+    }
     return {
-      eligibleWallets: 0,
+      eligibleWallets: listSize,
+      checkedWallets: 0,
       totalAllocation: 0,
       transactionAllocation: 0,
       nftAllocation: 0,
@@ -158,6 +167,10 @@ function parseCsv(text: string) {
     }
     if (seen.has(wallet)) {
       errors.push(`Row ${i + 1}: duplicate wallet ${wallet}`);
+      continue;
+    }
+    if (!isEligibleWallet(wallet)) {
+      errors.push(`Row ${i + 1}: ${wallet} is not on the whitelist form`);
       continue;
     }
     seen.add(wallet);
@@ -214,10 +227,10 @@ export const importCsv = createServerFn({ method: "POST" })
       await sql`
         insert into allocations (
           wallet, transaction_count, nft_count, transaction_allocation,
-          nft_allocation, total_allocation, merkle_leaf, updated_at
+          nft_allocation, total_allocation, merkle_leaf, activity_synced_at, updated_at
         ) values (
           ${row.wallet}, ${row.transaction_count}, ${row.nft_count}, ${row.transaction_allocation},
-          ${row.nft_allocation}, ${row.total_allocation}, ${leaf}, now()
+          ${row.nft_allocation}, ${row.total_allocation}, ${leaf}, now(), now()
         )
         on conflict (wallet) do update set
           transaction_count = excluded.transaction_count,
@@ -226,6 +239,7 @@ export const importCsv = createServerFn({ method: "POST" })
           nft_allocation = excluded.nft_allocation,
           total_allocation = excluded.total_allocation,
           merkle_leaf = excluded.merkle_leaf,
+          activity_synced_at = now(),
           updated_at = now()
       `;
     }

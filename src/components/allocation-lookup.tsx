@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { checkAllocation } from "@/lib/claim-server";
@@ -28,27 +28,32 @@ export function AllocationLookup({
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allocation, setAllocation] = useState<Allocation | null>(null);
+  const requestId = useRef(0);
 
   async function onCheck() {
+    const id = (requestId.current += 1);
     setError(null);
+    setAllocation(null);
     setChecking(true);
     try {
       const res = await checkAllocation({
         data: { wallet: lookup, accessToken: accessToken ?? undefined },
       });
+      if (id !== requestId.current) return;
       if (!res.ok) {
-        setAllocation(null);
         setError(res.error);
         onFound?.(null);
         return;
       }
+      setError(null);
       setAllocation(res.allocation);
       onFound?.(res.allocation);
     } catch {
+      if (id !== requestId.current) return;
       setError("Could not check allocation.");
       onFound?.(null);
     } finally {
-      setChecking(false);
+      if (id === requestId.current) setChecking(false);
     }
   }
 
@@ -59,7 +64,8 @@ export function AllocationLookup({
           Check your allocation
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Enter the Base wallet from the allocation file — not necessarily the embedded wallet.
+          Enter the Base wallet you submitted on the whitelist form — not necessarily the embedded
+          wallet. Anyone not on that list is ineligible.
         </p>
         <label className="mt-4 block text-xs font-medium tracking-wide text-muted" htmlFor={inputId}>
           Wallet address
@@ -87,7 +93,7 @@ export function AllocationLookup({
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             {error === "Wallet Not Eligible"
-              ? "This wallet is not in the allocation file."
+              ? "This wallet is not on the whitelist form. Only submitted wallets can claim."
               : error}
           </p>
         </section>

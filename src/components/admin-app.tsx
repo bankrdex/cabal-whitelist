@@ -107,7 +107,8 @@ export function AdminApp() {
       {stats ? (
         <section className="grid grid-cols-2 gap-2">
           <Stat label="Eligible wallets" value={formatCabal(stats.eligibleWallets)} />
-          <Stat label="Total allocation" value={`${formatCabal(stats.totalAllocation)}`} />
+          <Stat label="Checked wallets" value={formatCabal(stats.checkedWallets ?? 0)} />
+          <Stat label="Total allocation" value={formatCabal(stats.totalAllocation)} />
           <Stat label="Tx allocation" value={formatCabal(stats.transactionAllocation)} />
           <Stat label="NFT allocation" value={formatCabal(stats.nftAllocation)} />
           <Stat label="Claims completed" value={formatCabal(stats.claimsCompleted)} />

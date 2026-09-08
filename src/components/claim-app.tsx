@@ -15,6 +15,7 @@ export function ClaimApp() {
     paused: boolean;
     startIso: string;
     now: number;
+    eligibleCount: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -22,7 +23,15 @@ export function ClaimApp() {
     let alive = true;
     const load = () => {
       getClaimStatus().then((s) => {
-        if (alive) setStatus({ open: s.open, paused: s.paused, startIso: s.startIso, now: s.now });
+        if (alive) {
+          setStatus({
+            open: s.open,
+            paused: s.paused,
+            startIso: s.startIso,
+            now: s.now,
+            eligibleCount: s.eligibleCount,
+          });
+        }
       });
     };
     load();
@@ -87,7 +96,9 @@ export function ClaimApp() {
             CABAL IS LIVE
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            Claim opens {CLAIM.time} {CLAIM.timezone}. Log in with email or X. No MetaMask required.
+            Claim opens {CLAIM.time} {CLAIM.timezone}. Only wallets from the whitelist form are
+            eligible{status?.eligibleCount ? ` (${status.eligibleCount.toLocaleString("en-US")})` : ""}.
+            Log in with email or X. No MetaMask required.
           </p>
         </section>
 

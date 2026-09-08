@@ -2,10 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { createPublicClient, formatEther, http } from "viem";
 import { base } from "viem/chains";
 import { nftAllocation, totalAllocation, txAllocation } from "@/lib/allocation";
+import { readBaseActivity } from "@/lib/base-activity";
 import { CLAIM } from "@/lib/config";
 import { getSql } from "@/lib/db";
+import { eligibleCount, isEligibleWallet } from "@/lib/eligible";
 import { env } from "@/lib/env.server";
-import { merkleProof, buildMerkle } from "@/lib/merkle";
+import { allocationLeaf, merkleProof, buildMerkle } from "@/lib/merkle";
 import { privyConfigured, verifyPrivyUser } from "@/lib/privy-server";
 import { accessTokenSchema, normalizeWallet, walletInputSchema } from "@/lib/validation";
 import { z } from "zod";
@@ -21,6 +23,7 @@ type AllocationRow = {
   merkle_leaf: string | null;
   claimed: boolean;
   claim_transaction: string | null;
+  activity_synced_at?: string | null;
 };
 
 async function sqlClient() {
@@ -65,7 +68,23 @@ function mapAllocation(row: AllocationRow) {
   };
 }
 
+function amounts(tx: number, nft: number) {
+  return {
+    transaction_count: tx,
+    nft_count: nft,
+    transaction_allocation: txAllocation(tx),
+    nft_allocation: nftAllocation(nft),
+    total_allocation: totalAllocation(tx, nft),
+  };
+}
+
 export const getClaimStatus = createServerFn({ method: "GET" }).handler(async () => {
+  let listSize = 0;
+  try {
+    listSize = eligibleCount();
+  } catch {
+    listSize = 0;
+  }
   const fallback = {
     open: Date.now() >= new Date(CLAIM.at).getTime(),
     paused: false,
@@ -74,6 +93,7 @@ export const getClaimStatus = createServerFn({ method: "GET" }).handler(async ()
     tokenAddress: env("CABAL_TOKEN_ADDRESS") ?? null,
     claimContract: env("CLAIM_CONTRACT_ADDRESS") ?? null,
     privyReady: privyConfigured(),
+    eligibleCount: listSize,
   };
   try {
     const window = await readClaimWindow();
@@ -85,6 +105,7 @@ export const getClaimStatus = createServerFn({ method: "GET" }).handler(async ()
       tokenAddress: fallback.tokenAddress,
       claimContract: fallback.claimContract,
       privyReady: fallback.privyReady,
+      eligibleCount: listSize,
     };
   } catch {
     return fallback;
@@ -106,6 +127,54 @@ export const getGasBalance = createServerFn({ method: "POST" })
     }
   });
 
+async function persistAllocation(
+  wallet: string,
+  tx: number,
+  nft: number,
+  claimed = false,
+  claimTransaction: string | null = null,
+) {
+  const sql = await sqlClient();
+  const computed = amounts(tx, nft);
+  const leaf = allocationLeaf(wallet, BigInt(computed.total_allocation));
+  if (!sql) {
+    return {
+      wallet,
+      ...computed,
+      merkle_leaf: leaf,
+      claimed,
+      claim_transaction: claimTransaction,
+      activity_synced_at: new Date().toISOString(),
+    } satisfies AllocationRow;
+  }
+  await sql`
+    insert into allocations (
+      wallet, transaction_count, nft_count, transaction_allocation,
+      nft_allocation, total_allocation, merkle_leaf, activity_synced_at, updated_at
+    ) values (
+      ${wallet}, ${computed.transaction_count}, ${computed.nft_count}, ${computed.transaction_allocation},
+      ${computed.nft_allocation}, ${computed.total_allocation}, ${leaf}, now(), now()
+    )
+    on conflict (wallet) do update set
+      transaction_count = excluded.transaction_count,
+      nft_count = excluded.nft_count,
+      transaction_allocation = excluded.transaction_allocation,
+      nft_allocation = excluded.nft_allocation,
+      total_allocation = excluded.total_allocation,
+      merkle_leaf = excluded.merkle_leaf,
+      activity_synced_at = excluded.activity_synced_at,
+      updated_at = now()
+    where allocations.activity_synced_at is null
+  `;
+  const rows = await sql<AllocationRow>`
+    select wallet, transaction_count, nft_count, transaction_allocation,
+           nft_allocation, total_allocation, merkle_leaf, claimed, claim_transaction,
+           activity_synced_at
+    from allocations where wallet = ${wallet}
+  `;
+  return rows[0]!;
+}
+
 export const checkAllocation = createServerFn({ method: "POST" })
   .validator((input: unknown) =>
     z
@@ -121,22 +190,44 @@ export const checkAllocation = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Enter a valid Base wallet address." };
     }
 
-    const sql = await sqlClient();
-    if (!sql) {
-      return { ok: false as const, error: "Allocation database is not connected yet." };
+    if (!isEligibleWallet(wallet)) {
+      return { ok: false as const, error: "Wallet Not Eligible" };
     }
-    const rows = await sql<AllocationRow>`
-      select wallet, transaction_count, nft_count, transaction_allocation,
-             nft_allocation, total_allocation, merkle_leaf, claimed, claim_transaction
-      from allocations where wallet = ${wallet}
-    `;
-    const row = rows[0];
+
+    const sql = await sqlClient();
+    let row: AllocationRow | undefined;
+    if (sql) {
+      const rows = await sql<AllocationRow>`
+        select wallet, transaction_count, nft_count, transaction_allocation,
+               nft_allocation, total_allocation, merkle_leaf, claimed, claim_transaction,
+               activity_synced_at
+        from allocations where wallet = ${wallet}
+      `;
+      row = rows[0];
+    }
+
+    if (!row?.activity_synced_at) {
+      const activity = await readBaseActivity(wallet);
+      if (!activity.ok) {
+        if (row) {
+          // Eligible, stored row exists, chain read failed — show stored numbers.
+        } else {
+          return {
+            ok: false as const,
+            error: "Wallet is on the whitelist, but Base activity could not be read. Try again.",
+          };
+        }
+      } else {
+        row = await persistAllocation(wallet, activity.tx, activity.nft, row?.claimed ?? false, row?.claim_transaction ?? null);
+      }
+    }
+
     if (!row) {
       return { ok: false as const, error: "Wallet Not Eligible" };
     }
 
     let bound: string | null = null;
-    if (data.accessToken && privyConfigured()) {
+    if (data.accessToken && privyConfigured() && sql) {
       try {
         const userId = await verifyPrivyUser(data.accessToken);
         const existing = await sql<{ allocation_wallet: string }>`
@@ -198,6 +289,9 @@ export const requestClaim = createServerFn({ method: "POST" })
 
     const wallet = normalizeWallet(data.wallet);
     if (!wallet) return { ok: false as const, error: "Invalid allocation wallet." };
+    if (!isEligibleWallet(wallet)) {
+      return { ok: false as const, error: "Wallet Not Eligible" };
+    }
 
     let userId: string;
     try {
@@ -231,7 +325,8 @@ export const requestClaim = createServerFn({ method: "POST" })
 
     const rows = await sql<AllocationRow>`
       select wallet, transaction_count, nft_count, transaction_allocation,
-             nft_allocation, total_allocation, merkle_leaf, claimed, claim_transaction
+             nft_allocation, total_allocation, merkle_leaf, claimed, claim_transaction,
+             activity_synced_at
       from allocations where wallet = ${wallet}
     `;
     const row = rows[0];
