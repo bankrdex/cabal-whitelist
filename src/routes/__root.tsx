@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { WalletProvider } from "@/components/wallet-provider";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "CABAL Claim";
+const APP_NAME = "Claim CABAL";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -14,8 +14,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content:
-          "$CABAL is live on Base. Claim opens 12:00 PM UTC+1. Log in with email or X.",
+        content: "Claim CABAL. Token contract on Base. Claim opens 12:00 PM UTC+1.",
       },
       { name: "theme-color", content: "#05060a" },
     ],

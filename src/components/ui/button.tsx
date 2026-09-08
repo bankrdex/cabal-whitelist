@@ -8,18 +8,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary:
-          "bg-primary text-primary-fg shadow-[var(--shadow-primary)] hover:bg-primary/90",
+        primary: "bg-primary text-primary-fg shadow-[var(--shadow-primary)] hover:bg-primary/90",
         outline:
           "bg-surface-2 text-fg shadow-[var(--shadow-border)] hover:shadow-[var(--shadow-border-hover)] hover:bg-surface",
-        ghost: "bg-transparent text-fg hover:bg-surface-2",
         locked: "bg-surface-2 text-muted shadow-[var(--shadow-border)]",
       },
       size: {
         default: "h-11 px-4 text-sm",
         sm: "h-10 px-3 text-sm",
         lg: "h-12 px-5 text-base",
-        full: "h-12 w-full px-4 text-sm",
+        full: "h-14 w-full px-4 text-base",
       },
     },
     defaultVariants: {
